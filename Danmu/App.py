@@ -12,7 +12,7 @@ class App(QWidget):
         self.top = 20  # if os.name == "nt" else 30
         screenRect = QDesktopWidget.screenGeometry(QApplication.desktop())
         self.width = screenRect.width()
-        self.height = screenRect.height() - 20
+        self.height = screenRect.height() - 22
         self.initUi()
 
     def initUi(self):

@@ -15,7 +15,7 @@ class Marquee(QFrame):
         self.initUi(self.screenWidth, self.screenHeight)
 
     def initUi(self, screenWidth, screenHeight):
-        self.setStyleSheet("border:5px solid red;")
+        self.setStyleSheet("border:8px solid red;")
         self.setGeometry(0,
                          0,
                          self.screenWidth,
