@@ -1,5 +1,4 @@
 import cv2
-import sys
 import numpy as np
 import matplotlib.pyplot as plt
 from pynput.mouse import Button, Controller
@@ -24,7 +23,6 @@ tetragonVerticesUpd = np.float32([[0, 0], [0, 720], [1280, 720], [1280, 0]])
 
 if __name__ == "__main__":
     mouse = Controller()
-    plt.rcParams['figure.dpi'] = 300
     cap = cv2.VideoCapture(0)
 
     # wri = cv2.VideoWriter(
@@ -65,11 +63,11 @@ if __name__ == "__main__":
             point = (point[:, 0]/point[2, 0])[:2]
             if 0 < point[0] < 1280 and 0 < point[1] < 720:
                 mouse.position = (int(point[0]), int(point[1]))
-        frame = cv2.circle(frame, (int(point[0]), int(point[1])), 1, (0, 255, 0), 10)
+        # frame = cv2.circle(frame, (int(point[0]), int(point[1])), 1, (0, 255, 0), 10)
         # wri.write(frame)
-        cv2.imshow('pos', frame)
-        k = cv2.waitKey(1)
-        if k == 27:
-            sys.exit()
+        # cv2.imshow('pos', cv2.resize(frame, (720, 480)))
+        # k = cv2.waitKey(1)
+        # if k == 27:
+        #     sys.exit()
     # wri.release()
 cv2.destroyAllWindows()
