@@ -2,6 +2,7 @@ import cv2
 import sys
 import numpy as np
 import matplotlib.pyplot as plt
+from pynput.mouse import Button, Controller
 
 
 def angle_cos(p0, p1, p2):
@@ -22,15 +23,16 @@ tetragonVerticesUpd = np.float32([[0, 0], [0, 720], [1280, 720], [1280, 0]])
 
 
 if __name__ == "__main__":
+    mouse = Controller()
     plt.rcParams['figure.dpi'] = 300
-    cap = cv2.VideoCapture("/Users/zya/Downloads/VID_20181025_234734.mp4")
+    cap = cv2.VideoCapture(0)
 
-    wri = cv2.VideoWriter(
-        "/Users/zya/Downloads/VID_20181025_234734_.mp4",
-        cv2.VideoWriter_fourcc('F', 'M', 'P', '4'),
-        30,
-        (1280, 720),
-    )
+    # wri = cv2.VideoWriter(
+    #     "/Users/zya/Downloads/VID_20181025_235333_.mp4",
+    #     cv2.VideoWriter_fourcc('F', 'M', 'P', '4'),
+    #     30,
+    #     (1280, 720),
+    # )
 
     while True:
         ret, frame = cap.read()
@@ -41,41 +43,33 @@ if __name__ == "__main__":
             np.logical_or(framehsv[:, :, 0] < 10, framehsv[:, :, 0] > 170),
             framehsv[:, :, 1] > 120
         )
-        # plt.imshow(margin_binary, cmap='gray')
-        # plt.show()
-        # break
         _, contours, hierarchy = cv2.findContours(np.uint8(margin_binary)*255, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
-        # cv2.drawContours(frame, contours, -1, (0, 0, 255), 2)
-        # plt.imshow(frame)
-        # plt.show()
-        # break
+        area_max = 0
+        tetragonVertices = np.zeros((4, 2), dtype=np.float32)
         for contour in contours:
-            # print(cv2.contourArea(contour))
-            # if cv2.contourArea(contour) < frame.shape[0]*frame.shape[1] / 16:
-            #     continue
-
-            # print(c ontour)
             contourPerimeter = cv2.arcLength(contour, True)
             hull = cv2.convexHull(contour)
             contour = cv2.approxPolyDP(hull, 0.02 * contourPerimeter, True)
-
-            if len(contour) == 4 and cv2.contourArea(contour) > frame.shape[0]*frame.shape[1] / 16:
+            area = cv2.contourArea(contour)
+            if len(contour) == 4 and area > frame.shape[0]*frame.shape[1] / 16:
                 contour = contour.reshape(-1, 2)
                 max_cos = np.max([angle_cos(contour[i], contour[(i + 1) % 4], contour[(i + 2) % 4]) for i in range(4)])
-                if max_cos < 0.3:
-                    tetragonVertices = counterclockwiseSort(contour)
-                    tetragonVertices = np.float32(tetragonVertices)
-                    perspectiveMatrix = cv2.getPerspectiveTransform(tetragonVertices, tetragonVerticesUpd)
-                    warpped = cv2.warpPerspective(frame, perspectiveMatrix, (1280, 720))
-                    point = np.dot(perspectiveMatrix, np.array([[frame.shape[1]/2], [frame.shape[0]/2], [1]]))
-                    point = (point[:, 0]/point[2, 0])[:2]
-                    break
-        print((int(point[0]), int(point[1])))
+                if max_cos < 0.3 and area > area_max:
+                    cv2.drawContours(frame, [contour], 0, (0, 0, 255), 2)
+                    area_max = area
+                    tetragonVertices = np.float32(counterclockwiseSort(contour))
+        if area_max > 0:
+            perspectiveMatrix = cv2.getPerspectiveTransform(tetragonVertices, tetragonVerticesUpd)
+            warpped = cv2.warpPerspective(frame, perspectiveMatrix, (1280, 720))
+            point = np.dot(perspectiveMatrix, np.array([[frame.shape[1]/2], [frame.shape[0]/2], [1]]))
+            point = (point[:, 0]/point[2, 0])[:2]
+            if 0 < point[0] < 1280 and 0 < point[1] < 720:
+                mouse.position = (int(point[0]), int(point[1]))
         frame = cv2.circle(frame, (int(point[0]), int(point[1])), 1, (0, 255, 0), 10)
-        wri.write(frame)
+        # wri.write(frame)
         cv2.imshow('pos', frame)
         k = cv2.waitKey(1)
         if k == 27:
             sys.exit()
-    wri.release()
+    # wri.release()
 cv2.destroyAllWindows()
