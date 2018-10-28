@@ -1,6 +1,6 @@
 import cv2
+import sys
 import numpy as np
-import matplotlib.pyplot as plt
 from pynput.mouse import Button, Controller
 
 
@@ -18,13 +18,14 @@ def counterclockwiseSort(tetragon):
 
 perspectiveMatrix = np.zeros((3, 3))
 point = np.zeros((2,))
+tetragonVertices = np.zeros((4, 2), dtype=np.float32)
 tetragonVerticesUpd = np.float32([[0, 0], [0, 720], [1280, 720], [1280, 0]])
 
 
 if __name__ == "__main__":
     mouse = Controller()
     cap = cv2.VideoCapture(0)
-
+    time_start = cv2.getTickCount()
     # wri = cv2.VideoWriter(
     #     "/Users/zya/Downloads/VID_20181025_235333_.mp4",
     #     cv2.VideoWriter_fourcc('F', 'M', 'P', '4'),
@@ -34,8 +35,8 @@ if __name__ == "__main__":
 
     while True:
         ret, frame = cap.read()
-        if not ret:
-            break
+        # if not ret:
+        #     break
         framehsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
         margin_binary = np.logical_and(
             np.logical_or(framehsv[:, :, 0] < 10, framehsv[:, :, 0] > 170),
@@ -43,7 +44,6 @@ if __name__ == "__main__":
         )
         _, contours, hierarchy = cv2.findContours(np.uint8(margin_binary)*255, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
         area_max = 0
-        tetragonVertices = np.zeros((4, 2), dtype=np.float32)
         for contour in contours:
             contourPerimeter = cv2.arcLength(contour, True)
             hull = cv2.convexHull(contour)
@@ -58,16 +58,20 @@ if __name__ == "__main__":
                     tetragonVertices = np.float32(counterclockwiseSort(contour))
         if area_max > 0:
             perspectiveMatrix = cv2.getPerspectiveTransform(tetragonVertices, tetragonVerticesUpd)
-            warpped = cv2.warpPerspective(frame, perspectiveMatrix, (1280, 720))
+            # warped = cv2.warpPerspective(frame, perspectiveMatrix, (1280, 720))
             point = np.dot(perspectiveMatrix, np.array([[frame.shape[1]/2], [frame.shape[0]/2], [1]]))
             point = (point[:, 0]/point[2, 0])[:2]
             if 0 < point[0] < 1280 and 0 < point[1] < 720:
-                mouse.position = (int(point[0]), int(point[1]))
+                mouse.position = (
+                    int(mouse.position[0] * 0.8 + point[0] * 0.2),
+                    int(mouse.position[1] * 0.8 + point[1] * 0.2)
+                )
         # frame = cv2.circle(frame, (int(point[0]), int(point[1])), 1, (0, 255, 0), 10)
         # wri.write(frame)
-        # cv2.imshow('pos', cv2.resize(frame, (720, 480)))
-        # k = cv2.waitKey(1)
-        # if k == 27:
-        #     sys.exit()
+        cv2.imshow('pos', cv2.resize(frame, (720, 480)))
+        k = cv2.waitKey(1)
+        if k == 27:
+            sys.exit()
     # wri.release()
+    print(cap.get(cv2.CAP_PROP_FRAME_COUNT)/(-time_start + cv2.getTickCount())*cv2.getTickFrequency())
 cv2.destroyAllWindows()

@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-import argparse
 import sys
 import os
 import time
@@ -38,7 +37,7 @@ class Marquee(QFrame):
     def __init__(self, window):
         super().__init__(window)
         self.screenWidth, self.screenHeight = window.getDisplayArea()
-        self.setStyleSheet("border:8px solid red;")
+        self.setStyleSheet("border:10px solid red;")
         self.setGeometry(0,
                          0,
                          self.screenWidth,
