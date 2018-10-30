@@ -1,7 +1,6 @@
 import cv2
-import sys
 import numpy as np
-from pynput.mouse import Button, Controller
+from pynput.mouse import Controller
 
 
 def angle_cos(p0, p1, p2):
@@ -9,16 +8,17 @@ def angle_cos(p0, p1, p2):
     return abs(np.dot(d1, d2) / np.sqrt(np.dot(d1, d1)*np.dot(d2, d2)))
 
 
-def counterclockwiseSort(tetragon):
+def counter_clockwise_sort(tetragon):
     tetragon = sorted(tetragon, key=lambda e: e[0])
     tetragon[0:2] = sorted(tetragon[0:2], key=lambda e: e[1])
     tetragon[2:4] = sorted(tetragon[2:4], key=lambda e: e[1], reverse=True)
     return tetragon
 
+
 smoothness = 0.5
 ScreenWidth = 1280
 ScreenHeight = 800
-ScreenOverLap = 100
+ScreenOverlap = 100
 
 perspectiveMatrix = np.zeros((3, 3))
 point = np.zeros((2,))
@@ -40,9 +40,6 @@ if __name__ == "__main__":
     while not cap.read()[0]:
         pass
     old_gray = cv2.cvtColor(cap.read()[1], cv2.COLOR_BGR2GRAY)
-    # print(old_gray.shape)
-    # cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1280)
-    # cap.set(cv2.CAP_PROP_FRAME_WIDTH, 720)
     time_start = cv2.getTickCount()
     # wri = cv2.VideoWriter(
     #     "/Users/zya/Downloads/VID_20181025_235333_.mp4",
@@ -62,7 +59,11 @@ if __name__ == "__main__":
                 np.logical_or(frame_hsv[:, :, 0] < 10, frame_hsv[:, :, 0] > 170),
                 frame_hsv[:, :, 1] > 120
             )
-            _, contours, hierarchy = cv2.findContours(np.uint8(margin_binary)*255, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
+            _, contours, hierarchy = cv2.findContours(
+                np.uint8(margin_binary)*255,
+                cv2.RETR_LIST,
+                cv2.CHAIN_APPROX_SIMPLE
+            )
             area_max = 0
             for contour in contours:
                 contourPerimeter = cv2.arcLength(contour, True)
@@ -71,11 +72,13 @@ if __name__ == "__main__":
                 area = cv2.contourArea(contour)
                 if len(contour) == 4 and area > frame.shape[0]*frame.shape[1] / 16:
                     contour = contour.reshape(-1, 2)
-                    max_cos = np.max([angle_cos(contour[i], contour[(i + 1) % 4], contour[(i + 2) % 4]) for i in range(4)])
+                    max_cos = np.max(
+                        [angle_cos(contour[i], contour[(i + 1) % 4], contour[(i + 2) % 4]) for i in range(4)]
+                    )
                     if max_cos < 0.26 and area > area_max:
                         # cv2.drawContours(frame, [contour], 0, (0, 0, 255), 2)
                         area_max = area
-                        tetragonVertices = np.float32(counterclockwiseSort(contour))
+                        tetragonVertices = np.float32(counter_clockwise_sort(contour))
             if area_max > 0:
                 perspectiveMatrix = cv2.getPerspectiveTransform(tetragonVertices, tetragonVerticesUpd)
 
@@ -91,7 +94,8 @@ if __name__ == "__main__":
                 # warped = cv2.warpPerspective(frame, perspectiveMatrix, (1280, 720))
                 point = np.dot(perspectiveMatrix, np.array([[frame.shape[1]/2], [frame.shape[0]/2], [1]]))
                 point = (point[:, 0]/point[2, 0])[:2]
-                if -ScreenOverLap < point[0] < 1280 + ScreenOverLap and -ScreenOverLap < point[1] < 720 + ScreenOverLap:
+                if -ScreenOverlap < point[0] < 1280 + ScreenOverlap\
+                        and -ScreenOverlap < point[1] < 720 + ScreenOverlap:
                     mouse.position = (
                         int(mouse.position[0] * (1 - smoothness) + point[0] / 720 * ScreenHeight * smoothness),
                         int(mouse.position[1] * (1 - smoothness) + point[1] / 1280 * ScreenWidth * smoothness)
@@ -115,13 +119,14 @@ if __name__ == "__main__":
                         )
 
                     if False not in st:
-                        tetragonVertices = np.float32(counterclockwiseSort(points_new.reshape(-1, 2)))
+                        tetragonVertices = np.float32(counter_clockwise_sort(points_new.reshape(-1, 2)))
                         perspectiveMatrix = cv2.getPerspectiveTransform(tetragonVertices, tetragonVerticesUpd)
                         # warped = cv2.warpPerspective(frame, perspectiveMatrix, (1280, 720))
                         point = np.dot(perspectiveMatrix, np.array([[frame.shape[1]/2], [frame.shape[0]/2], [1]]))
                         point = (point[:, 0]/point[2, 0])[:2]
                         print(point)
-                        if -ScreenOverLap < point[0] < 1280 + ScreenOverLap and -ScreenOverLap < point[1] < 720 + ScreenOverLap:
+                        if -ScreenOverlap < point[0] < 1280 + ScreenOverlap \
+                                and -ScreenOverlap < point[1] < 720 + ScreenOverlap:
                             mouse.position = (
                                 int(mouse.position[0] * (1 - smoothness) + point[0] / 720 * ScreenHeight * smoothness),
                                 int(mouse.position[1] * (1 - smoothness) + point[1] / 1280 * ScreenWidth * smoothness)
