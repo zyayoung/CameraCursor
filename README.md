@@ -6,7 +6,7 @@
 >
 > Powered proudly by opencv. Classes called by zya
 >
-> - zbm
+> <div style="text-align: right">- zbm</div>
 
 This is a python script that can move your cursor to the place where your camera aims at.
 
