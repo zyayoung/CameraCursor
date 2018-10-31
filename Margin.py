@@ -54,4 +54,4 @@ if __name__ == '__main__':
         if os.name == 'nt':
             MyMainWindow.raise_()
         sleep(0.1)
-        time.sleep(0.001)
+        time.sleep(1)

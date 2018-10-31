@@ -1,7 +1,7 @@
 import cv2
+import time
 import numpy as np
 from pynput.mouse import Controller
-
 
 def angle_cos(p0, p1, p2):
     d1, d2 = (p0-p1).astype('float'), (p2-p1).astype('float')
@@ -14,11 +14,13 @@ def counter_clockwise_sort(tetragon):
     tetragon[2:4] = sorted(tetragon[2:4], key=lambda e: e[1], reverse=True)
     return tetragon
 
+DEBUG = False
 
-smoothness = 0.5
+MouseSmoothness = 0.5
 ScreenWidth = 1280
 ScreenHeight = 800
-ScreenOverlap = 100
+ScreenOverlap = 200
+CalibrateInterval = 1  # s
 
 perspectiveMatrix = np.zeros((3, 3))
 point = np.zeros((2,))
@@ -47,7 +49,7 @@ if __name__ == "__main__":
     #     30,
     #     (int(cap.get(cv2.CAP_PROP_FRAME_WIDTH)), int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))),
     # )
-
+    calibrate_timer = cv2.getTickCount()
     try:
         while True:
             ret, frame = cap.read()
@@ -56,7 +58,7 @@ if __name__ == "__main__":
             frame_hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
             frame_gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
             margin_binary = np.logical_and(
-                np.logical_or(frame_hsv[:, :, 0] < 10, frame_hsv[:, :, 0] > 170),
+                np.logical_or(frame_hsv[:, :, 0] < 8, frame_hsv[:, :, 0] > 172),
                 frame_hsv[:, :, 1] > 120
             )
             _, contours, hierarchy = cv2.findContours(
@@ -65,50 +67,49 @@ if __name__ == "__main__":
                 cv2.CHAIN_APPROX_SIMPLE
             )
             area_max = 0
-            for contour in contours:
-                contourPerimeter = cv2.arcLength(contour, True)
-                hull = cv2.convexHull(contour)
-                contour = cv2.approxPolyDP(hull, 0.02 * contourPerimeter, True)
-                area = cv2.contourArea(contour)
-                if len(contour) == 4 and area > frame.shape[0]*frame.shape[1] / 16:
-                    contour = contour.reshape(-1, 2)
-                    max_cos = np.max(
-                        [angle_cos(contour[i], contour[(i + 1) % 4], contour[(i + 2) % 4]) for i in range(4)]
-                    )
-                    if max_cos < 0.26 and area > area_max:
-                        # cv2.drawContours(frame, [contour], 0, (0, 0, 255), 2)
-                        area_max = area
-                        tetragonVertices = np.float32(counter_clockwise_sort(contour))
-            if area_max > 0:
-                perspectiveMatrix = cv2.getPerspectiveTransform(tetragonVertices, tetragonVerticesUpd)
-
-                for inx in range(4):
-                    frame = cv2.circle(
-                        frame,
-                        (int(tetragonVertices[inx][0]), int(tetragonVertices[inx][1])),
-                        1,
-                        (0, 0, 255),
-                        10
-                    )
-
-                # warped = cv2.warpPerspective(frame, perspectiveMatrix, (1280, 720))
-                point = np.dot(perspectiveMatrix, np.array([[frame.shape[1]/2], [frame.shape[0]/2], [1]]))
-                point = (point[:, 0]/point[2, 0])[:2]
-                if -ScreenOverlap < point[0] < 1280 + ScreenOverlap\
-                        and -ScreenOverlap < point[1] < 720 + ScreenOverlap:
-                    mouse.position = (
-                        int(mouse.position[0] * (1 - smoothness) + point[0] / 720 * ScreenHeight * smoothness),
-                        int(mouse.position[1] * (1 - smoothness) + point[1] / 1280 * ScreenWidth * smoothness)
-                    )
-                    points_old = tetragonVertices.reshape(4, 1, 2)
-                else:
-                    area_max = 0
-            if area_max == 0:
-                if points_old is not None:
-                    print("opt works")
-                    # calcOpticalFlowPyrLK
-                    points_new, st, err = cv2.calcOpticalFlowPyrLK(old_gray, frame_gray, points_old, None, **lk_params)
-
+            if points_old is None or (cv2.getTickCount() - calibrate_timer) / cv2.getTickFrequency() > CalibrateInterval:
+                for contour in contours:
+                    contourPerimeter = cv2.arcLength(contour, True)
+                    hull = cv2.convexHull(contour)
+                    contour = cv2.approxPolyDP(hull, 0.02 * contourPerimeter, True)
+                    area = cv2.contourArea(contour)
+                    if len(contour) == 4 and area > frame.shape[0]*frame.shape[1] / 16:
+                        contour = contour.reshape(-1, 2)
+                        max_cos = np.max(
+                            [angle_cos(contour[i], contour[(i + 1) % 4], contour[(i + 2) % 4]) for i in range(4)]
+                        )
+                        if max_cos < 0.26 and area > area_max:
+                            # cv2.drawContours(frame, [contour], 0, (0, 0, 255), 2)
+                            area_max = area
+                            tetragonVertices = np.float32(counter_clockwise_sort(contour))
+                if area_max > 0:
+                    perspectiveMatrix = cv2.getPerspectiveTransform(tetragonVertices, tetragonVerticesUpd)
+                    calibrate_timer = cv2.getTickCount()
+                    if DEBUG:
+                        for inx in range(4):
+                            frame = cv2.circle(
+                                frame,
+                                (int(tetragonVertices[inx][0]), int(tetragonVertices[inx][1])),
+                                1,
+                                (0, 0, 255),
+                                10
+                            )
+                    # warped = cv2.warpPerspective(frame, perspectiveMatrix, (1280, 720))
+                    point = np.dot(perspectiveMatrix, np.array([[frame.shape[1]/2], [frame.shape[0]/2], [1]]))
+                    point = (point[:, 0]/point[2, 0])[:2]
+                    if -ScreenOverlap < point[0] < 1280 + ScreenOverlap\
+                            and -ScreenOverlap < point[1] < 720 + ScreenOverlap:
+                        mouse.position = (
+                            int(mouse.position[0] * (1 - MouseSmoothness) + point[0] / 720 * ScreenHeight * MouseSmoothness),
+                            int(mouse.position[1] * (1 - MouseSmoothness) + point[1] / 1280 * ScreenWidth * MouseSmoothness)
+                        )
+                        points_old = tetragonVertices.reshape(4, 1, 2)
+                    else:
+                        area_max = 0
+            if area_max == 0 and points_old is not None:
+                # calcOpticalFlowPyrLK
+                points_new, st, err = cv2.calcOpticalFlowPyrLK(old_gray, frame_gray, points_old, None, **lk_params)
+                if DEBUG:
                     for inx in range(4):
                         frame = cv2.circle(
                             frame,
@@ -117,32 +118,35 @@ if __name__ == "__main__":
                             (0, 255, 0),
                             10
                         )
-
-                    if False not in st:
-                        tetragonVertices = np.float32(counter_clockwise_sort(points_new.reshape(-1, 2)))
-                        perspectiveMatrix = cv2.getPerspectiveTransform(tetragonVertices, tetragonVerticesUpd)
-                        # warped = cv2.warpPerspective(frame, perspectiveMatrix, (1280, 720))
-                        point = np.dot(perspectiveMatrix, np.array([[frame.shape[1]/2], [frame.shape[0]/2], [1]]))
-                        point = (point[:, 0]/point[2, 0])[:2]
-                        print(point)
-                        if -ScreenOverlap < point[0] < 1280 + ScreenOverlap \
-                                and -ScreenOverlap < point[1] < 720 + ScreenOverlap:
-                            mouse.position = (
-                                int(mouse.position[0] * (1 - smoothness) + point[0] / 720 * ScreenHeight * smoothness),
-                                int(mouse.position[1] * (1 - smoothness) + point[1] / 1280 * ScreenWidth * smoothness)
-                            )
-                        points_old = tetragonVertices.reshape(4, 1, 2)
-                    else:
-                        print("opt fail")
-                        points_old = None
+                st = np.logical_and(st, np.abs(points_new - points_old).reshape(4, 2).max(axis=1) < 100)
+                # print(np.abs(points_new - points_old).reshape(4, 2).max(axis=1))
+                if False not in st:
+                    # print("opt works")
+                    tetragonVertices = np.float32(counter_clockwise_sort(points_new.reshape(-1, 2)))
+                    perspectiveMatrix = cv2.getPerspectiveTransform(tetragonVertices, tetragonVerticesUpd)
+                    # warped = cv2.warpPerspective(frame, perspectiveMatrix, (1280, 720))
+                    point = np.dot(perspectiveMatrix, np.array([[frame.shape[1]/2], [frame.shape[0]/2], [1]]))
+                    point = (point[:, 0]/point[2, 0])[:2]
+                    # print(point)
+                    if -ScreenOverlap < point[0] < 1280 + ScreenOverlap \
+                            and -ScreenOverlap < point[1] < 720 + ScreenOverlap:
+                        mouse.position = (
+                            int(mouse.position[0] * (1 - MouseSmoothness) + point[0] / 720 * ScreenHeight * MouseSmoothness),
+                            int(mouse.position[1] * (1 - MouseSmoothness) + point[1] / 1280 * ScreenWidth * MouseSmoothness)
+                        )
+                    points_old = tetragonVertices.reshape(4, 1, 2)
+                else:
+                    print("opt fail")
+                    points_old = None
             old_gray = frame_gray
 
             # wri.write(frame)
 
-            cv2.imshow('pos', cv2.resize(frame, (720, 480)))
-            k = cv2.waitKey(1)
-            if k == 27:
-                raise KeyboardInterrupt
+            if DEBUG:
+                cv2.imshow('pos', cv2.resize(frame, (720, 480)))
+                k = cv2.waitKey(1)
+                if k == 27:
+                    raise KeyboardInterrupt
     except KeyboardInterrupt:
         print("exit")
         # wri.release()
