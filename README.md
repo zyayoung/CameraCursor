@@ -2,11 +2,11 @@
 
 ## Intro
 
-> A python script that calls many classes to finish a hard task in a efficient way.
+> A python script that calls many classes to finish a hard task in an efficient way.
 >
-> Powered proudly by opencv. Classes called by zya
+> Proudly Powered By OpenCV with classes called by [zyayoung](https://github.com/zyayoung).
 >
-> \- zbm
+> \- [BoYanZh](https://github.com/BoYanZh)
 
 This is a python script that can move your cursor to the place where your camera aims at.
 
