@@ -111,7 +111,8 @@ if __name__ == "__main__":
                                 (0, 0, 255),
                                 10
                             )
-                    # warped = cv2.warpPerspective(frame, perspectiveMatrix, (1280, 720))
+                    warped = cv2.warpPerspective(frame, perspectiveMatrix, (1280, 720))
+                    cv2.imwrite("/Users/zya/Downloads/5.jpg", warped)
                     point = np.dot(perspectiveMatrix, np.array([[frame.shape[1]/2], [frame.shape[0]/2], [1]]))
                     point = (point[:, 0]/point[2, 0])[:2]
                     if -ScreenOverlap < point[0] < 1280 + ScreenOverlap\
@@ -141,7 +142,8 @@ if __name__ == "__main__":
                     # print("opt works")
                     tetragonVertices = np.float32(counter_clockwise_sort(points_new.reshape(-1, 2)))
                     perspectiveMatrix = cv2.getPerspectiveTransform(tetragonVertices, tetragonVerticesUpd)
-                    # warped = cv2.warpPerspective(frame, perspectiveMatrix, (1280, 720))
+                    warped = cv2.warpPerspective(frame, perspectiveMatrix, (1280, 720))
+                    cv2.imwrite("/Users/zya/Downloads/5.jpg", warped)
                     point = np.dot(perspectiveMatrix, np.array([[frame.shape[1]/2], [frame.shape[0]/2], [1]]))
                     point = (point[:, 0]/point[2, 0])[:2]
                     # print(point)
