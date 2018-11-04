@@ -1,7 +1,10 @@
 import cv2
 import time
 import numpy as np
+import sys
 from pynput.mouse import Controller
+from PyQt5.QtWidgets import QApplication
+from Margin import App, Marquee, sleep
 
 def angle_cos(p0, p1, p2):
     d1, d2 = (p0-p1).astype('float'), (p2-p1).astype('float')
@@ -16,11 +19,11 @@ def counter_clockwise_sort(tetragon):
 
 DEBUG = False
 
-MouseSmoothness = 0.5
+MouseSmoothness = 0.25
 ScreenWidth = 1280
 ScreenHeight = 800
-ScreenOverlap = 200
-CalibrateInterval = 1  # s
+ScreenOverlap = 250
+CalibrateInterval = 1e-100  # s
 
 perspectiveMatrix = np.zeros((3, 3))
 point = np.zeros((2,))
@@ -35,8 +38,13 @@ lk_params = dict(
 )
 
 if __name__ == "__main__":
+    # Margin
+    app = QApplication(sys.argv)
+    MyMainWindow = App()
+    MyMarquee = Marquee(MyMainWindow)
+
     mouse = Controller()
-    cap = cv2.VideoCapture(0)
+    cap = cv2.VideoCapture("http://192.168.43.1:8080/video")
     # cap = cv2.VideoCapture("/Users/zya/Downloads/VID_20181025_234734.mp4")
     points_old = None
     while not cap.read()[0]:
@@ -53,12 +61,13 @@ if __name__ == "__main__":
     try:
         while True:
             ret, frame = cap.read()
+            sleep(0.00001)
             if not ret:
                 raise KeyboardInterrupt
             frame_hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
             frame_gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
             margin_binary = np.logical_and(
-                np.logical_or(frame_hsv[:, :, 0] < 8, frame_hsv[:, :, 0] > 172),
+                np.logical_or(frame_hsv[:, :, 0] < 10, frame_hsv[:, :, 0] > 170),
                 frame_hsv[:, :, 1] > 120
             )
             _, contours, hierarchy = cv2.findContours(
