@@ -1,5 +1,5 @@
 import cv2
-import time
+import matplotlib.pyplot as plt
 import numpy as np
 import sys
 from pynput.mouse import Controller
@@ -17,7 +17,8 @@ def counter_clockwise_sort(tetragon):
     tetragon[2:4] = sorted(tetragon[2:4], key=lambda e: e[1], reverse=True)
     return tetragon
 
-DEBUG = False
+
+DEBUG = True
 
 MouseSmoothness = 0.25
 ScreenWidth = 1280
@@ -44,8 +45,8 @@ if __name__ == "__main__":
     MyMarquee = Marquee(MyMainWindow)
 
     mouse = Controller()
-    cap = cv2.VideoCapture("http://192.168.43.1:8080/video")
-    # cap = cv2.VideoCapture("/Users/zya/Downloads/VID_20181025_234734.mp4")
+    # cap = cv2.VideoCapture("http://192.168.43.1:8080/video")
+    cap = cv2.VideoCapture("/Users/zya/Downloads/VID_20181025_234734.mp4")
     points_old = None
     while not cap.read()[0]:
         pass
@@ -64,17 +65,24 @@ if __name__ == "__main__":
             sleep(0.00001)
             if not ret:
                 raise KeyboardInterrupt
+            cv2.imwrite("/Users/zya/Downloads/1.jpg", frame)
             frame_hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
             frame_gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
             margin_binary = np.logical_and(
                 np.logical_or(frame_hsv[:, :, 0] < 10, frame_hsv[:, :, 0] > 170),
                 frame_hsv[:, :, 1] > 120
             )
+
+            cv2.imwrite("/Users/zya/Downloads/2.jpg", cv2.cvtColor(np.uint8(margin_binary)*255, cv2.COLOR_GRAY2BGR))
             _, contours, hierarchy = cv2.findContours(
                 np.uint8(margin_binary)*255,
                 cv2.RETR_LIST,
                 cv2.CHAIN_APPROX_SIMPLE
             )
+            frame_labeled = cv2.cvtColor(np.uint8(margin_binary)*255, cv2.COLOR_GRAY2BGR)
+            cv2.drawContours(frame_labeled, contours, -1, (0, 0, 255), 2)
+            cv2.imwrite("/Users/zya/Downloads/3.jpg", frame_labeled)
+
             area_max = 0
             if points_old is None or (cv2.getTickCount() - calibrate_timer) / cv2.getTickFrequency() > CalibrateInterval:
                 for contour in contours:
@@ -88,7 +96,7 @@ if __name__ == "__main__":
                             [angle_cos(contour[i], contour[(i + 1) % 4], contour[(i + 2) % 4]) for i in range(4)]
                         )
                         if max_cos < 0.26 and area > area_max:
-                            # cv2.drawContours(frame, [contour], 0, (0, 0, 255), 2)
+                            cv2.drawContours(frame, [contour], 0, (0, 0, 255), 2)
                             area_max = area
                             tetragonVertices = np.float32(counter_clockwise_sort(contour))
                 if area_max > 0:
@@ -150,6 +158,8 @@ if __name__ == "__main__":
             old_gray = frame_gray
 
             # wri.write(frame)
+            cv2.imwrite("/Users/zya/Downloads/4.jpg", frame)
+            exit()
 
             if DEBUG:
                 cv2.imshow('pos', cv2.resize(frame, (720, 480)))
