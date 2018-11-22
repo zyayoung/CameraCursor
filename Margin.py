@@ -16,10 +16,10 @@ class App(QWidget):
     def __init__(self):
         super().__init__()
         self.left = 0
-        self.top = 0  # if os.name == "nt" else 30
+        self.top = 20  # if os.name == "nt" else 30
         screenRect = QDesktopWidget.screenGeometry(QApplication.desktop())
         self.width = screenRect.width()
-        self.height = screenRect.height()
+        self.height = screenRect.height() - 23
         if os.name == 'nt':
             self.setWindowFlags(Qt.FramelessWindowHint | Qt.Tool | Qt.WindowStaysOnTopHint)
         else:
@@ -37,7 +37,7 @@ class Marquee(QFrame):
     def __init__(self, window):
         super().__init__(window)
         self.screenWidth, self.screenHeight = window.getDisplayArea()
-        self.setStyleSheet("border:25px solid blue;")
+        self.setStyleSheet("border:15px solid red;")
         self.setGeometry(0,
                          0,
                          self.screenWidth,

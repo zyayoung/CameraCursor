@@ -20,8 +20,8 @@ def counter_clockwise_sort(tetragon):
 DEBUG = False
 
 MouseSmoothness = 0.25
-ScreenWidth = 1920
-ScreenHeight = 1080
+ScreenWidth = 1280
+ScreenHeight = 800
 ScreenOverlap = 250
 CalibrateInterval = 1e-100  # s
 
@@ -60,15 +60,15 @@ if __name__ == "__main__":
     calibrate_timer = cv2.getTickCount()
     try:
         while True:
-            sleep(0.00001)
             ret, frame = cap.read()
+            sleep(0.00001)
             if not ret:
                 raise KeyboardInterrupt
             frame_hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
             frame_gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
             margin_binary = np.logical_and(
-                np.logical_or(frame_hsv[:, :, 0] < 130, frame_hsv[:, :, 0] > 110),
-                frame_hsv[:, :, 1] > 127
+                np.logical_or(frame_hsv[:, :, 0] < 10, frame_hsv[:, :, 0] > 170),
+                frame_hsv[:, :, 1] > 120
             )
             _, contours, hierarchy = cv2.findContours(
                 np.uint8(margin_binary)*255,
