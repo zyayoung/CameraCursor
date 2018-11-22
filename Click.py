@@ -6,10 +6,6 @@ app = Flask(__name__)
 
 mouse = Controller()
 
-# import logging
-# log = logging.getLogger('werkzeug')
-# log.setLevel(logging.ERROR)
-
 # identify user's identity
 @app.route("/")
 def hello():
