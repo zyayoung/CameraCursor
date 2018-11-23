@@ -19,11 +19,11 @@ def counter_clockwise_sort(tetragon):
 
 DEBUG = False
 
-MouseSmoothness = 0.25
-ScreenWidth = 1280
-ScreenHeight = 800
+MouseSmoothness = 0.5
+ScreenWidth = 1920
+ScreenHeight = 1080
 ScreenOverlap = 250
-CalibrateInterval = 1e-100  # s
+CalibrateInterval = 0  # s
 
 perspectiveMatrix = np.zeros((3, 3))
 point = np.zeros((2,))
@@ -145,7 +145,7 @@ if __name__ == "__main__":
                         )
                     points_old = tetragonVertices.reshape(4, 1, 2)
                 else:
-                    print("opt fail")
+                    # print("opt fail")
                     points_old = None
             old_gray = frame_gray
 
