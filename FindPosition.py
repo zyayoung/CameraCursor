@@ -2,6 +2,7 @@ import cv2
 import time
 import numpy as np
 import sys
+import re
 from pynput.mouse import Controller
 from PyQt5.QtWidgets import QApplication
 from Margin import App, Marquee, sleep
@@ -15,13 +16,14 @@ mouse = Controller()
 DEBUG = False
 
 
-MouseSmoothness = 0.8
+MouseSmoothness = 0.2
 ScreenWidth = 1920
 ScreenHeight = 1080
 ScreenOverlap = 250
 CalibrateInterval = 0  # s
 bias = np.zeros((2,))
-mouseposition = np.array([ScreenWidth/2, ScreenHeight/2])
+mouseposition = np.array([1280//2, 720/2])
+# mouseposition[0] = 
 
 app = Flask(__name__)
 
@@ -29,13 +31,13 @@ mouse = Controller()
 def mouse_mover():
     global mouseposition, MouseSmoothness
     while True:
-        if mouseposition[0]>=0:
+        if mouseposition[0] >= 0:
             mouse.position = (
-                int(mouse.position[0] * (1 - MouseSmoothness) + mouseposition[0] * MouseSmoothness),
-                int(mouse.position[1] * (1 - MouseSmoothness) + mouseposition[1] * MouseSmoothness)
+                int(mouse.position[0] * (1 - MouseSmoothness) + mouseposition[0] * MouseSmoothness / 1280 * ScreenWidth),
+                int(mouse.position[1] * (1 - MouseSmoothness) + mouseposition[1] * MouseSmoothness / 720 * ScreenHeight)
             )
         # print(mouse.position)
-        sleep(0.02)
+        sleep(0.033)
 
 
 
@@ -44,18 +46,23 @@ def mouse_mover():
 # log.setLevel(logging.ERROR)
 
 # identify user's identity
+score = ""
 @app.route("/")
 def hello():
+    global score
     if request.args.get('action') == 'click':
         mouse.click(Button.left, 1)
     elif request.args.get('action') == 'calibrate':
         global bias
-        bias_now = np.array([ScreenWidth/2,ScreenHeight/2]) - mouseposition
+        bias_now = np.array([ScreenWidth/2,ScreenHeight/2]) - mouse.position
         bias_now[0] = bias_now[0]/ScreenWidth*1280
-        bias_now[1] = bias_now[1]/ScreenWidth*720
-        print(bias_now)
+        bias_now[1] = bias_now[1]/ScreenHeight*720
         bias += bias_now
-    return "Hello World!"
+        print(bias)
+    elif request.args.get('action') == 'set':
+        score = request.args.get('content')
+    # print(score)
+    return '<h1>Score:' + str(np.array(re.findall(r'(\d+)\s',score+' '), dtype='int').sum()) + '</h1>' + '<div style="font-size:18px">'+score.replace(' ','</div><div style="font-size:18px">')+'</div>'
 
 def runapp():
     app.run(host='0.0.0.0', port=3575)
@@ -117,9 +124,10 @@ if __name__ == "__main__":
             frame_hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
             frame_gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
             margin_binary = np.logical_and(
-                np.logical_or(frame_hsv[:, :, 0] < 10, frame_hsv[:, :, 0] > 170),
-                frame_hsv[:, :, 1] > 120
+                np.logical_or(frame_hsv[:, :, 0] < 8, frame_hsv[:, :, 0] > 172),
+                frame_hsv[:, :, 1] > 150
             )
+            # print(frame_hsv[:,:,1])
             _, contours, hierarchy = cv2.findContours(
                 np.uint8(margin_binary)*255,
                 cv2.RETR_LIST,
@@ -163,6 +171,7 @@ if __name__ == "__main__":
                     if -ScreenOverlap < point[0] < 1280 + ScreenOverlap\
                             and -ScreenOverlap < point[1] < 720 + ScreenOverlap:
                         mouseposition = point
+                        # print(mouseposition)
                         points_old = tetragonVertices.reshape(4, 1, 2)
                     else:
                         area_max = 0
