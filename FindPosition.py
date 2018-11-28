@@ -5,6 +5,60 @@ import sys
 from pynput.mouse import Controller
 from PyQt5.QtWidgets import QApplication
 from Margin import App, Marquee, sleep
+import threading as td
+
+from flask import Flask, request
+import sys
+from pynput.mouse import Button, Controller
+mouse = Controller()
+
+DEBUG = False
+
+
+MouseSmoothness = 0.8
+ScreenWidth = 1920
+ScreenHeight = 1080
+ScreenOverlap = 250
+CalibrateInterval = 0  # s
+bias = np.zeros((2,))
+mouseposition = np.array([ScreenWidth/2, ScreenHeight/2])
+
+app = Flask(__name__)
+
+mouse = Controller()
+def mouse_mover():
+    global mouseposition, MouseSmoothness
+    while True:
+        if mouseposition[0]>=0:
+            mouse.position = (
+                int(mouse.position[0] * (1 - MouseSmoothness) + mouseposition[0] * MouseSmoothness),
+                int(mouse.position[1] * (1 - MouseSmoothness) + mouseposition[1] * MouseSmoothness)
+            )
+        # print(mouse.position)
+        sleep(0.02)
+
+
+
+# import logging
+# log = logging.getLogger('werkzeug')
+# log.setLevel(logging.ERROR)
+
+# identify user's identity
+@app.route("/")
+def hello():
+    if request.args.get('action') == 'click':
+        mouse.click(Button.left, 1)
+    elif request.args.get('action') == 'calibrate':
+        global bias
+        bias_now = np.array([ScreenWidth/2,ScreenHeight/2]) - mouseposition
+        bias_now[0] = bias_now[0]/ScreenWidth*1280
+        bias_now[1] = bias_now[1]/ScreenWidth*720
+        print(bias_now)
+        bias += bias_now
+    return "Hello World!"
+
+def runapp():
+    app.run(host='0.0.0.0', port=3575)
 
 def angle_cos(p0, p1, p2):
     d1, d2 = (p0-p1).astype('float'), (p2-p1).astype('float')
@@ -17,13 +71,10 @@ def counter_clockwise_sort(tetragon):
     tetragon[2:4] = sorted(tetragon[2:4], key=lambda e: e[1], reverse=True)
     return tetragon
 
-DEBUG = False
 
-MouseSmoothness = 0.5
-ScreenWidth = 1920
-ScreenHeight = 1080
-ScreenOverlap = 250
-CalibrateInterval = 0  # s
+
+td.Thread(target=runapp, daemon=True).start()
+td.Thread(target=mouse_mover, daemon=True).start()
 
 perspectiveMatrix = np.zeros((3, 3))
 point = np.zeros((2,))
@@ -43,7 +94,6 @@ if __name__ == "__main__":
     MyMainWindow = App()
     MyMarquee = Marquee(MyMainWindow)
 
-    mouse = Controller()
     cap = cv2.VideoCapture("http://192.168.43.1:8080/video")
     # cap = cv2.VideoCapture("/Users/zya/Downloads/VID_20181025_234734.mp4")
     points_old = None
@@ -106,12 +156,13 @@ if __name__ == "__main__":
                     # warped = cv2.warpPerspective(frame, perspectiveMatrix, (1280, 720))
                     point = np.dot(perspectiveMatrix, np.array([[frame.shape[1]/2], [frame.shape[0]/2], [1]]))
                     point = (point[:, 0]/point[2, 0])[:2]
+                    # print(point)
+                    point += bias
+                    # print(point)
+                    # print(bias)
                     if -ScreenOverlap < point[0] < 1280 + ScreenOverlap\
                             and -ScreenOverlap < point[1] < 720 + ScreenOverlap:
-                        mouse.position = (
-                            int(mouse.position[0] * (1 - MouseSmoothness) + point[0] / 720 * ScreenHeight * MouseSmoothness),
-                            int(mouse.position[1] * (1 - MouseSmoothness) + point[1] / 1280 * ScreenWidth * MouseSmoothness)
-                        )
+                        mouseposition = point
                         points_old = tetragonVertices.reshape(4, 1, 2)
                     else:
                         area_max = 0
@@ -136,16 +187,15 @@ if __name__ == "__main__":
                     # warped = cv2.warpPerspective(frame, perspectiveMatrix, (1280, 720))
                     point = np.dot(perspectiveMatrix, np.array([[frame.shape[1]/2], [frame.shape[0]/2], [1]]))
                     point = (point[:, 0]/point[2, 0])[:2]
+                    point += bias
                     # print(point)
                     if -ScreenOverlap < point[0] < 1280 + ScreenOverlap \
                             and -ScreenOverlap < point[1] < 720 + ScreenOverlap:
-                        mouse.position = (
-                            int(mouse.position[0] * (1 - MouseSmoothness) + point[0] / 720 * ScreenHeight * MouseSmoothness),
-                            int(mouse.position[1] * (1 - MouseSmoothness) + point[1] / 1280 * ScreenWidth * MouseSmoothness)
-                        )
+                        mouseposition = point
                     points_old = tetragonVertices.reshape(4, 1, 2)
                 else:
                     # print("opt fail")
+                    mouseposition[0]=-1
                     points_old = None
             old_gray = frame_gray
 
