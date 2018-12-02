@@ -62,7 +62,7 @@ def hello():
     elif request.args.get('action') == 'set':
         score = request.args.get('content')
     # print(score)
-    return '<h1>Score:' + str(np.array(re.findall(r'(\d+)\s',score+' '), dtype='int').sum()) + '</h1>' + '<div style="font-size:18px">'+score.replace(' ','</div><div style="font-size:18px">')+'</div>'
+    return '<div style="margin:20px"><h1>Score:' + str(np.array(re.findall(r'(\d+)\s',score+' '), dtype='int').sum()) + '</h1>' + '<div style="font-size:16px">'+score.replace(' ','</div><div style="font-size:16px">')+'</div></div>'
 
 def runapp():
     app.run(host='0.0.0.0', port=3575)
@@ -124,8 +124,8 @@ if __name__ == "__main__":
             frame_hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
             frame_gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
             margin_binary = np.logical_and(
-                np.logical_or(frame_hsv[:, :, 0] < 8, frame_hsv[:, :, 0] > 172),
-                frame_hsv[:, :, 1] > 150
+                np.logical_or(frame_hsv[:, :, 0] < 12, frame_hsv[:, :, 0] > 168),
+                frame_hsv[:, :, 1] > 120
             )
             # print(frame_hsv[:,:,1])
             _, contours, hierarchy = cv2.findContours(

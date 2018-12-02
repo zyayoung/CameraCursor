@@ -20,6 +20,17 @@ This is a python script that can move your cursor to the place where your camera
 
 ![](https://raw.githubusercontent.com/zyayoung/CameraCursor/master/Group12_poster.jpg)
 
+# Symposium Q&A
+
+- How do you find where the player is aiming at?
+  - We first transmit the frames caputured by the camera to the computer and do some image-processing.
+    - Display a red border on the screen
+    - Detect the red border on the screen
+    - Perform a perspective transformation
+    
+- How do you detect a trigger?
+  - When the arrow is released, there will be a huge change in acceleration on the bow. And the smartphone is installed on the bow, so we made an Android app to detect a shoot.
+
 ## Credit
 
 - [opencv](https://github.com/opencv/opencv)
