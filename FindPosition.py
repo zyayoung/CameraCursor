@@ -36,11 +36,9 @@ def mouse_mover():
                 int(mouse.position[0] * (1 - MouseSmoothness) + mouseposition[0] * MouseSmoothness / 1280 * ScreenWidth),
                 int(mouse.position[1] * (1 - MouseSmoothness) + mouseposition[1] * MouseSmoothness / 720 * ScreenHeight)
             )
-        # print(mouse.position)
         sleep(0.033)
 
 
-# identify user's identity
 score = ""
 @app.route("/")
 def hello():
