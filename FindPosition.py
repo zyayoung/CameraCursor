@@ -40,10 +40,6 @@ def mouse_mover():
         sleep(0.033)
 
 
-# import logging
-# log = logging.getLogger('werkzeug')
-# log.setLevel(logging.ERROR)
-
 # identify user's identity
 score = ""
 @app.route("/")
