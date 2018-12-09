@@ -16,9 +16,13 @@ This is a python script that can move your cursor to the place where your camera
 - pynput
 - pyqt
 
-## Our Poster for Archery Simulator
+## Our Poster
 
 ![](https://raw.githubusercontent.com/zyayoung/CameraCursor/master/Group12_poster.jpg)
+
+## Demo
+
+![](https://raw.githubusercontent.com/zyayoung/CameraCursor/master/Demo.gif)
 
 ## Symposium Q&A
 
