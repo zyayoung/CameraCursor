@@ -16,7 +16,7 @@ mouse = Controller()
 DEBUG = False
 
 
-MouseSmoothness = 0.2
+MouseSmoothness = 0.15
 ScreenWidth = 1920
 ScreenHeight = 1080
 ScreenOverlap = 250
@@ -40,7 +40,6 @@ def mouse_mover():
         sleep(0.033)
 
 
-
 # import logging
 # log = logging.getLogger('werkzeug')
 # log.setLevel(logging.ERROR)
@@ -62,7 +61,7 @@ def hello():
     elif request.args.get('action') == 'set':
         score = request.args.get('content')
     # print(score)
-    return '<div style="margin:20px"><h1>Score:' + str(np.array(re.findall(r'(\d+)\s',score+' '), dtype='int').sum()) + '</h1>' + '<div style="font-size:16px">'+score.replace(' ','</div><div style="font-size:16px">')+'</div></div>'
+    return '<div style="margin-left:50px"><h1>Score:' + str(np.array(re.findall(r'(\d+)\s',score+' '), dtype='int').sum()) + '</h1>' + '<div style="font-size:16px">'+score.replace(' ','</div><div style="font-size:16px">')+'</div></div>'
 
 def runapp():
     app.run(host='0.0.0.0', port=3575)

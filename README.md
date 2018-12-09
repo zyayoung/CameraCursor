@@ -1,4 +1,4 @@
-# CameraCursor （for Archery Simulator)
+# CameraCursor (Archery Simulator)
 
 ## Intro
 
